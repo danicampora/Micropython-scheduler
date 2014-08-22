@@ -21,6 +21,7 @@ Test/demonstration programs
  4. subthread.py Illustrates dynamic creation and deletion of threads.
  5. lcdtest.py Demonstrates output to an attached LCD display.
  6. polltest.py A thread which blocks on a user defined polling function
+ 7. instrument.py The scheduler's timing functions employed to instrument code
 
 The scheduler uses generators and the yield statement to implement lightweight threads. When a thread submits control to the scheduler it yields an object which informs the scheduler of the circumstances in which the thread should resume execution. There are four options.
  1. A timeout: the thread will be rescheduled after a given time has elapsed.
@@ -67,4 +68,9 @@ Polling
 
 Some hardware such as the accelerometer doesn't support interrupts, and therefore needs to be polled. One option suitable for slow devices is to write a thread which polls the device periodically. A faster and more elegant way is to delegate this activity to the scheduler. The thread then suspends excution pending the result of a user supplied callback function, which is run by the scheduler. From the thread's point of view it blocks pending an event - with an optional timeout available.
 
+Initialisation
+
+A thread is created with code like  
+objSched.add_thread(robin("Thread 1"))  
+When this code runs a generator object is created and assigned to the scheduler. It's important to note that at this time the thread will run until the first yield statement. It will then suspend execution until the scheduler starts. This enables initialisation code to be run in a well defined order: the order in which the threads are created.
 
