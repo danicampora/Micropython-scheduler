@@ -1,7 +1,10 @@
 # subthread.py Demo/test  of one thread starting another and receiving a result from it
+# Author: Peter Hinch
+# V1.0 21st Aug 2014
 
 from usched import Sched, Roundrobin, Timeout
 
+# Run on MicroPython board bare hardware
 # THREADS:
 
 def subthread(lstResult):                                   # Gets a list for returning result(s) to caller

@@ -1,9 +1,13 @@
 Micropython-scheduler
 =====================
 
-V1.0 21st August 2014
+V1.0 22nd August 2014  
+Author: Peter Hinch
 
 A set of libraries for writing threaded code on the MicroPython board.
+
+Files
+-----
 
 There are three libraries
  1. usched.py The scheduler
@@ -25,3 +29,42 @@ The scheduler uses generators and the yield statement to implement lightweight t
  4. Wait pending a pin interrupt: thread will reschedule after a pin interrupt has occurred.
  
 The last two options may include a timeout: a maximum time the thread will block pending the specified event.
+
+Overview
+--------
+
+Documentation
+
+Most of this is in the code comments. Look at the example programs first, then at the libraries themselves for more detail.
+
+Timing
+
+The scheduler's timing employs timer 2 as a free running microsecond counter. My use of microsecond timing shouldn't lead the user into hopeless optimism: if you want a delay of 1mS exactly don't issue  
+yield Timeout(0.001)  
+and expect to get it. It's a cooperative scheduler. Another thread will be running when the period elapses. Until that thread decides to yield your thread will have no chance of restarting. Even then a higher priority thread such as one blocked on an interrupt may, by then, be pending. So, while the minimum delay will be 1mS the maximum is dependent on the other code you have running. On the Micropython board don't be too surprised to see delays of many milliseconds.
+
+If you want precise timing, especially at millisecond level or better, you'll need to use one of the other hardware timers.
+
+So, why did I use a microsecond timer when even millisecond delays are questionable? Primarily to enable code to be instrumented using the timer functions at the top of the usched.py file. These enable you to measure how long segments of code take to run. On 32 bit hardware there is no real penalty in using such a fast timer, other than the fact that it leads to a maximum value of 536 seconds for delays. Obviously longer delays may be realised with a loop. If you specify a timeout in excess of the maximum an exception will be thrown.
+
+Lastly, avoid issuing short timeout values. A thread which does so will tend to hog the CPU at the expense of other threads. The well mannered way to yield control in the expectation of restarting soon is to yield a Roundrobin instance. In the absence of higher priority events, such a thread will resume when any other such threads have been scheduled.
+
+Communication
+
+In nontrivial applications threads need to communicate. A well behaved thread periodically yields control to the scheduler: the item yielded is an object which tells the scheduler the conditions under which the thread is to be re-sceduled. The item yielded is unsuitable for use for inter-thread communication which is best achieved by passing a shared mutable object as an argument to a thread on creation. At its simplest this can be a list, as in the example subthread.py. More flexibly a user defined mutable object may be used as in polltest.py. I'm ignoring the idea of globals here! 
+
+Concurrency
+
+The more gory aspects of concurrency are largely averted in a simple cooperative scheduler such as this: at any one time one thread has complete control and a data item is not suddenly going to be changed by the activities of another thread. However the Micropython system does enable hardware interrupts, and their handlers pre-emptively take control and run in their own context. Appropriate precautions should be taken communicating between interrupt handlers and other code.
+
+Interrupts
+
+The way in which the scheduler supports pin interrupts is described in irqtest.py In essence the user supplies a callback function. When an interrupt occurs, the default callback runs which increments a counter and runs the user's callback. A thread blocked on this interrupt will be rescheduled by virtue of the scheduler checking this counter.
+
+It's important to be aware that the user's callback runs in the IRQ context and is therefore subject to the Micropython rules on interrupt handlers along with the concurrency issues mentioned above.
+
+Polling
+
+Some hardware such as the accelerometer doesn't support interrupts, and therefore needs to be polled. One option suitable for slow devices is to write a thread which polls the device periodically. A faster and more elegant way is to delegate this activity to the scheduler. The thread then suspends excution pending the result of a user supplied callback function, which is run by the scheduler. From the thread's point of view it blocks pending an event - with an optional timeout available.
+
+
