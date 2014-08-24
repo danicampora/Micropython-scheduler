@@ -1,6 +1,6 @@
 # Switch class for Micropython and scheduler.
 # Author: Peter Hinch
-# V1.0 21st Aug 2014
+# V1.01 26th Aug 2014 switchcheck thread is now a method
 # 8th Aug: supports arguments for switch callbacks
 
 import pyb
@@ -23,21 +23,21 @@ class Switch(object):
         self.close_func_args = close_func_args
         self.open_func = open_func
         self.open_func_args = open_func_args
+        self.switchstate = self.pin.value()                 # Get initial state
         objSched.add_thread(switchcheck(self))              # Thread runs forever
 
     def __call__(self):
-        return self.pin.value()                             # Return current state of switch (0 = pressed)
+        return self.switchstate                             # Return current state of switch (0 = pressed)
 
-def switchcheck(myswitch):                                  # Generator object: thread which tests and debounces
-    oldstate = myswitch()                                   # Get initial switch state
-    wf = Timeout(Switch.DEBOUNCETIME)
-    while True:
-        state = myswitch()
-        if state != oldstate:                               # State has changed: act on it now.
-            if state == 0 and myswitch.close_func:
-                myswitch.close_func(*myswitch.close_func_args)
-            elif state == 1 and myswitch.open_func:
-                myswitch.open_func(*myswitch.open_func_args)
-            oldstate = state
-        yield wf()                                          # Ignore further state changes until switch has settled
+    def switchcheck(self):                                  # Generator object: thread which tests and debounces
+        wf = Timeout(Switch.DEBOUNCETIME)
+        while True:
+            state = self.pin.value()
+            if state != self.switchstate:                   # State has changed: act on it now.
+                self.switchstate = state
+                if state == 0 and myswitch.close_func:
+                    self.close_func(*self.close_func_args)
+                elif state == 1 and self.open_func:
+                    myswitch.open_func(*self.open_func_args)
+            yield wf()                                      # Ignore further state changes until switch has settled
 
