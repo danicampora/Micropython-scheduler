@@ -1,6 +1,6 @@
 # Switch class for Micropython and scheduler.
 # Author: Peter Hinch
-# V1.01 26th Aug 2014 switchcheck thread is now a method
+# V1.02 26th Aug 2014 switchcheck thread is now a method
 # 8th Aug: supports arguments for switch callbacks
 
 import pyb
@@ -24,7 +24,7 @@ class Switch(object):
         self.open_func = open_func
         self.open_func_args = open_func_args
         self.switchstate = self.pin.value()                 # Get initial state
-        objSched.add_thread(switchcheck(self))              # Thread runs forever
+        objSched.add_thread(self.switchcheck())              # Thread runs forever
 
     def __call__(self):
         return self.switchstate                             # Return current state of switch (0 = pressed)
