@@ -35,9 +35,9 @@ class Switch(object):
             state = self.pin.value()
             if state != self.switchstate:                   # State has changed: act on it now.
                 self.switchstate = state
-                if state == 0 and myswitch.close_func:
+                if state == 0 and self.close_func:
                     self.close_func(*self.close_func_args)
                 elif state == 1 and self.open_func:
-                    myswitch.open_func(*self.open_func_args)
+                    self.open_func(*self.open_func_args)
             yield wf()                                      # Ignore further state changes until switch has settled
 
