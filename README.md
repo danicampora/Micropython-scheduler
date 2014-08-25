@@ -9,10 +9,12 @@ A set of libraries for writing threaded code on the MicroPython board.
 Files
 -----
 
-There are three libraries
+There are five libraries
  1. usched.py The scheduler
  2. switch.py Support for debounced switches. Uses usched.
- 3. lcdthread.py Support for LCD displays using the Hitachi HD44780 controller chip. Uses usched.
+ 3. pushbutton.py Pushbutton supports logical value, press, release, long and double click callbacks
+ 4. lcdthread.py Support for LCD displays using the Hitachi HD44780 controller chip. Uses usched.
+ 5. delay.py A simple retriggerable time delay class
 
 Test/demonstration programs
  1. ledflash.py Flashes the onboard LED's asynchronously
@@ -22,6 +24,7 @@ Test/demonstration programs
  5. lcdtest.py Demonstrates output to an attached LCD display.
  6. polltest.py A thread which blocks on a user defined polling function
  7. instrument.py The scheduler's timing functions employed to instrument code
+ 8. pushbuttontest.py Demo of pushbutton class
 
 The scheduler uses generators and the yield statement to implement lightweight threads. When a thread submits control to the scheduler it yields an object which informs the scheduler of the circumstances in which the thread should resume execution. There are four options.
  1. A timeout: the thread will be rescheduled after a given time has elapsed.

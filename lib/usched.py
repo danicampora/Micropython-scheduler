@@ -1,7 +1,7 @@
 # Microthreads for the micropython board. 20th Aug 2014
 # Author: Peter Hinch
-# V1.0 21st Aug 2014
-
+# V1.01 25th Aug 2014
+# 25th Aug microsUntil added for Delay class
 # 14th Aug unused pin argument removed from Waitfor constructor
 # 12th Aug: Waitfor.triggered returns a measure of priority, with scheduler scheduling the highest priority thread
 # and sending the result to the yield statement
@@ -36,6 +36,11 @@ def after(trigtime):                                        # If current time is
     if res >= MAXTIME:
         res = 0
     return res
+
+def microsUntil(tim):                                       # uS from now until a specified time (used in Delay class)
+    if tim >= MAXTIME:
+        raise TimerException()
+    return ((tim - micros.counter()) & TIMERPERIOD)
                                                             # @micropython.native causes crash: can't find reason
 def seconds(S):                                             # Utility functions to convert to integer microseconds
     return int(1000000*S)
