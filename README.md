@@ -26,6 +26,8 @@ Test/demonstration programs
  7. instrument.py The scheduler's timing functions employed to instrument code
  8. pushbuttontest.py Demo of pushbutton class
 
+There is also a file minified.zip. This includes the above files but run through pyminifier to strip comments and unneccesary spaces. Cryptic. Only recommended if you're running on internal memory and are short of space. Please report any bugs against the standard version as the line numbers won't match otherwise!
+
 The scheduler uses generators and the yield statement to implement lightweight threads. When a thread submits control to the scheduler it yields an object which informs the scheduler of the circumstances in which the thread should resume execution. There are four options.
  1. A timeout: the thread will be rescheduled after a given time has elapsed.
  2. Round robin: it will be rescheduled as soon as possible subject to other pending threads getting run.

@@ -3,7 +3,7 @@
 # V1.0 25th Aug 2014
 
 from usched import Sched
-from pushbutton import Pushbutton
+from pushbutton import Pushbutton, descriptor
 
 
 def x5print(*args):
