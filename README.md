@@ -73,6 +73,14 @@ Polling
 
 Some hardware such as the accelerometer doesn't support interrupts, and therefore needs to be polled. One option suitable for slow devices is to write a thread which polls the device periodically. A faster and more elegant way is to delegate this activity to the scheduler. The thread then suspends excution pending the result of a user supplied callback function, which is run by the scheduler. From the thread's point of view it blocks pending an event - with an optional timeout available.
 
+Return from yield
+
+The scheduler returns a 3-tuple to all yield statements. In many case this can be ignored but it contains information about why the thread was scheduled such as a count of interrupts which have occurred and whether the return was due to an event or a timeout. Elements are:
+ 0. 0 unless thread returned a Pinblock and one or more interrupts have occured, when it holds a count of interrupts.
+ 1. 0 unless thread returned a Poller and the latter has returned an integer, when it holds that value.
+ 2. 0 unless thread was waiting on a timer* when it holds no. of uS it is late
+* In addition to Timeout instances this includes timeouts applied to Pinblock or Poller objects: this enables the thread to determine whether it was rescheduled because of the event or because of a timeout. If the thread yielded a Roundrobin instance the return tuple will be (0, 0, 0). There is little point in intercepting this.
+
 Initialisation
 
 A thread is created with code like  
