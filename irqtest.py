@@ -1,6 +1,6 @@
 # irqtest.py Demonstrates, with minimal hardware, the use of the scheduler in responding to pin interrupts
 # Author: Peter Hinch
-# V1.0 21st Aug 2014
+# V1.02 6th Sep 2014
 
 # Also demonstrates the debounced switch library (which is threaded)
 
@@ -15,7 +15,7 @@
 # The optional pushbuttons print a message when operated.
 
 import pyb
-from usched import Sched, Poller, Timeout, Pinblock
+from usched import Sched, Poller, Timeout, Pinblock, wait
 from switch import Switch                                   # Library supporting debounced switches
 
 # HARDWARE 
@@ -27,7 +27,7 @@ from switch import Switch                                   # Library supporting
 # THREADS:
 
 def stop(fTim, objSch):                                     # Stop the scheduler after fTim seconds
-    yield Timeout(fTim)
+    yield from wait(fTim)
     objSch.stop()
 
 def oscillator(freq_hz = 1):                                # Toggles X7 forever.
@@ -59,17 +59,19 @@ def irqtest_thread():                                       # Thread blocks on a
     while True:
         result = (yield wf())                               # Wait for the interrupt
         lstLeds[0].toggle()                                 # Toggle LED
-        print("IRQ thread", result)
+        print("Interrupt recieved ", result)
 
 def x5print(*args):
-    print("X5 pressed " +args[0])                           # Demo of argument passing
+    print("X5 released " +args[0])                          # Demo of argument passing
 
 def x6print(*args):
     print("X6 pressed " + args[0])
 
 # USER TEST PROGRAM
 # Runs forever unless you pass a number of seconds
-def irqtest(duration = 0):                                  # Runs oscillator, counts interrupts, responds to switches
+def test(duration = 0):                                     # Runs oscillator, counts interrupts, responds to switches
+    if duration:
+        print("Test interrupt on pin X8 for {:3d} seconds".format(duration))
     objSched = Sched()                                      # Requires jumper between pins X7 and X8
     objSched.add_thread(oscillator(1))                      # 1Hz
     objSched.add_thread(irqtest_thread())
@@ -79,5 +81,5 @@ def irqtest(duration = 0):                                  # Runs oscillator, c
         objSched.add_thread(stop(duration, objSched))
     objSched.run()
 
-irqtest(30)
+test(30)
 

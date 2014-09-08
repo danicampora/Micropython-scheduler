@@ -1,7 +1,7 @@
 Micropython-scheduler
 =====================
 
-V1.0 22nd August 2014  
+V1.02 6th Sept 2014  
 Author: Peter Hinch
 
 A set of libraries for writing threaded code on the MicroPython board.
@@ -26,6 +26,8 @@ Test/demonstration programs
  7. instrument.py The scheduler's timing functions employed to instrument code
  8. pushbuttontest.py Demo of pushbutton class
 
+Now uses the new pyb.micros() function rather than tie up a hardware timer. Hence requires a version of MicroPython dated on or after 28th Aug 2014.
+
 There is also a file minified.zip. This includes the above files but run through pyminifier to strip comments and unneccesary spaces. Cryptic. Only recommended if you're running on internal memory and are short of space. Please report any bugs against the standard version as the line numbers won't match otherwise!
 
 The scheduler uses generators and the yield statement to implement lightweight threads. When a thread submits control to the scheduler it yields an object which informs the scheduler of the circumstances in which the thread should resume execution. There are four options.
@@ -45,15 +47,13 @@ Most of this is in the code comments. Look at the example programs first, then a
 
 Timing
 
-The scheduler's timing employs timer 2 as a free running microsecond counter. My use of microsecond timing shouldn't lead the user into hopeless optimism: if you want a delay of 1mS exactly don't issue  
-yield Timeout(0.001)  
-and expect to get it. It's a cooperative scheduler. Another thread will be running when the period elapses. Until that thread decides to yield your thread will have no chance of restarting. Even then a higher priority thread such as one blocked on an interrupt may, by then, be pending. So, while the minimum delay will be 1mS the maximum is dependent on the other code you have running. On the Micropython board don't be too surprised to see delays of many milliseconds.
+The scheduler's timing is based on pyb.micros(). My use of microsecond timing shouldn't lead the user into hopeless optimism: if you want a delay of 1mS exactly don't issue  
+yield from wait(0.001)  
+and expect to get a one millisecond delay. It's a cooperative scheduler. Another thread will be running when the period elapses. Until that thread decides to yield your thread will have no chance of restarting. Even then a higher priority thread such as one blocked on an interrupt may, by then, be pending. So, while the minimum delay will be 1mS the maximum is dependent on the other code you have running. On the Micropython board don't be too surprised to see delays of many milliseconds.
 
-If you want precise timing, especially at millisecond level or better, you'll need to use one of the other hardware timers.
+If you want precise timing, especially at millisecond level or better, you'll need to use one of the hardware timers.
 
-So, why did I use a microsecond timer when even millisecond delays are questionable? Primarily to enable code to be instrumented using the timer functions at the top of the usched.py file. These enable you to measure how long segments of code take to run. On 32 bit hardware there is no real penalty in using such a fast timer, other than the fact that it leads to a maximum value of 536 seconds for delays. Obviously longer delays may be realised with a loop. If you specify a timeout in excess of the maximum an exception will be thrown.
-
-Lastly, avoid issuing short timeout values. A thread which does so will tend to hog the CPU at the expense of other threads. The well mannered way to yield control in the expectation of restarting soon is to yield a Roundrobin instance. In the absence of higher priority events, such a thread will resume when any other such threads have been scheduled.
+Avoid issuing short timeout values. A thread which does so will tend to hog the CPU at the expense of other threads. The well mannered way to yield control in the expectation of restarting soon is to yield a Roundrobin instance. In the absence of higher priority events, such a thread will resume when any other such threads have been scheduled.
 
 Communication
 

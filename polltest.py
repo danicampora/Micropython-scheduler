@@ -1,10 +1,10 @@
 # polltest.py Demonstrates the use of poll functions where a thread blocks pending the result of a callback function
 # polled by the scheduler
 # Author: Peter Hinch
-# V1.0 21st Aug 2014
+# V1.02 6th Sep 2014
 
 import pyb
-from usched import Sched, Poller, Timeout
+from usched import Sched, Poller, wait
 
 # Poll functions will be called by the scheduler each time it determines which task to run. The thread will be scheduled
 # unless the poll function returns None. When scheduled the result of the poll function - which should be an integer -
@@ -32,7 +32,7 @@ from usched import Sched, Poller, Timeout
 # THREADS:
 
 def stop(fTim, objSch):                                     # Stop the scheduler after fTim seconds
-    yield Timeout(fTim)
+    yield from wait(fTim)
     objSch.stop()
 
 class Accelerometer(object):
@@ -61,7 +61,7 @@ class Accelerometer(object):
 
 def accelthread():
     accelhw = pyb.Accel()                                   # Instantiate accelerometer hardware
-    yield Timeout(0.03)                                     # Allow accelerometer to settle
+    yield from wait(0.03)                                   # Allow accelerometer to settle
     accel = Accelerometer(accelhw)
     wf = Poller(accel.poll, (4,), 2)                        # Instantiate a Poller with 2 second timeout.
     while True:
@@ -73,13 +73,16 @@ def accelthread():
 
 # USER TEST PROGRAM
 
-def pollaccel(duration = 0):
-    print("Output accelerometer values for {:3d} seconds".format(duration))
+def test(duration = 0):
+    if duration:
+        print("Output accelerometer values for {:3d} seconds".format(duration))
+    else:
+        print("Output accelerometer values")
     objSched = Sched()
     objSched.add_thread(accelthread())
     if duration:
         objSched.add_thread(stop(duration, objSched))           # Run for a period then stop
     objSched.run()
 
-pollaccel(30)
+test(30)
 

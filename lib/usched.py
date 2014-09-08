@@ -1,5 +1,6 @@
-# Microthreads for the micropython board. 20th Aug 2014
+# Microthreads for the micropython board. 6th Sep 2014
 # Author: Peter Hinch
+# V1.02 6th Sep 2014 Uses pyb.micros() in place of timer 2. Implements wait generator
 # V1.01 25th Aug 2014
 # 25th Aug microsUntil added for Delay class
 # 14th Aug unused pin argument removed from Waitfor constructor
@@ -13,35 +14,31 @@ micropython.alloc_emergency_exception_buf(100)
 
 # *************************************************** TIMER ACCESS **************************************************
 
-# Timing is based on a free running uS counter
 # Utility functions enable access to the counter which produce correct results if timer rolls over
 
-TIMERPERIOD = 0x3fffffff                                    # 17.89 minutes 1073 secs
-MAXTIME     = 0x1fffffff                                    # 536 seconds maximum timeout
-
-micros = pyb.Timer(2, prescaler=83, period=TIMERPERIOD)     # Initialise and start the global counter
+TIMERPERIOD = 0x7fffffff                                    # 35.79 minutes 2148 secs
+MAXTIME     = TIMERPERIOD//2                                # 1073 seconds maximum timeout
+MAXSECS     = MAXTIME//1000000
 
 class TimerException(Exception) : pass
 
 def microsWhen(timediff):                                   # Expected value of counter in a given no. of uS
     if timediff >= MAXTIME:
         raise TimerException()
-    return (micros.counter() + timediff) & TIMERPERIOD
+    return (pyb.micros() + timediff) & TIMERPERIOD
 
 def microsSince(oldtime):                                   # No of uS since timer held this value
-    return (micros.counter() - oldtime) & TIMERPERIOD
+    return (pyb.micros() - oldtime) & TIMERPERIOD
 
 def after(trigtime):                                        # If current time is after the specified value return
-    res = ((micros.counter() - trigtime) & TIMERPERIOD)     # the no. of uS after. Otherwise return zero
+    res = ((pyb.micros() - trigtime) & TIMERPERIOD)         # the no. of uS after. Otherwise return zero
     if res >= MAXTIME:
         res = 0
     return res
 
 def microsUntil(tim):                                       # uS from now until a specified time (used in Delay class)
-    if tim >= MAXTIME:
-        raise TimerException()
-    return ((tim - micros.counter()) & TIMERPERIOD)
-                                                            # @micropython.native causes crash: can't find reason
+    return ((tim - pyb.micros()) & TIMERPERIOD)
+
 def seconds(S):                                             # Utility functions to convert to integer microseconds
     return int(1000000*S)
 
@@ -136,6 +133,20 @@ class Timeout(Waitfor):                                     # A thread yielding 
     def __init__(self, tim):                                # Time is in seconds
         super().__init__()
         self.setdelay(tim)
+
+# A thread can relinquish control for a period in two ways: yielding a Timeout instance or issuing
+# yield from wait(time_in_seconds)
+# The latter imposes no restrictions on the duration whereas a Timeout will throw an exception if the time exceeds
+# MAXTIME
+def wait(secs):
+    if secs <=0 :
+        raise TimerException()
+    count = secs // MAXSECS                                 # number of 30 minute iterations
+    tstart = secs - count*MAXSECS                           # remainder (divmod is a tad broken)
+    yield Timeout(tstart)
+    while count:
+        yield Timeout(MAXSECS)
+        count -= 1
 
 # ************************************************ INTERRUPT HANDLING ***********************************************
 

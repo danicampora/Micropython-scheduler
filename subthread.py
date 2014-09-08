@@ -1,8 +1,8 @@
 # subthread.py Demo/test  of one thread starting another and receiving a result from it
 # Author: Peter Hinch
-# V1.0 21st Aug 2014
+# V1.02 6th Sep 2014
 
-from usched import Sched, Roundrobin, Timeout
+from usched import Sched, Roundrobin, wait
 
 # Run on MicroPython board bare hardware
 # THREADS:
@@ -10,7 +10,7 @@ from usched import Sched, Roundrobin, Timeout
 def subthread(lstResult):                                   # Gets a list for returning result(s) to caller
     yield Roundrobin()
     print("Subthread started")                              # In this test list simply contains a boolean
-    yield Timeout(1)
+    yield from wait(1)
     print("Subthread end")
     lstResult[0] = True
 
@@ -24,11 +24,11 @@ def waitforit(objSched):                                    # Waits forever on s
 
 # USER TEST PROGRAM
 # Runs to completion and terminates because all threads have ended
-def wait_test():
+def test():
     print("Demonstration of subthreads")
     objSched = Sched()
     objSched.add_thread(waitforit(objSched))                 # Test of one thread waiting on another
     objSched.run()
 
-wait_test()
+test()
 
